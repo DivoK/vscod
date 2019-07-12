@@ -8,6 +8,8 @@ verify_ssl = true
 [packages]
 requests = "*"
 loguru = "*"
+aiohttp = "*"
+aiofiles = "*"
 
 [requires]
 python_version = "3.7"
