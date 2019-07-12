@@ -18,20 +18,18 @@ class ExtensionPath:
     extension_id: str
 
 
-def download_extension(extension_name: str, publisher_name: str, save_path: Path) -> Path:
+def download_extension(extension_name: str, publisher_name: str, save_path: Path) -> None:
     response = requests.get(
         MARKETPLACE_DOWNLOAD_LINK.format(
             extension_name=extension_name, publisher_name=publisher_name
         )
     )
-    extension_path = (save_path / extension_name).with_suffix('.vsix')
-    extension_path.write_bytes(response.content)
-    return extension_path
+    save_path.write_bytes(response.content)
 
 
-def download_extension_by_id(extension_id: str, save_path: Path) -> Path:
+def download_extension_by_id(extension_id: str, save_path: Path) -> None:
     publisher_name, extension_name = extension_id.split('.')
-    return download_extension(extension_name, publisher_name, save_path)
+    download_extension(extension_name, publisher_name, save_path)
 
 
 def recursive_parse_to_dict(
@@ -59,11 +57,14 @@ def parse_extensions_json(json_path: Path) -> typing.List[ExtensionPath]:
 
 
 def get_extension_version(extension_id: str) -> str:
+    logger.debug(f'Requesting version of extension {extension_id}...')
     resp = requests.get(MARKETPLACE_PAGE_LINK.format(extension_id=extension_id))
     match = re.search(r'"Version":"(.*?)"', str(resp.content))
     if not match:
         raise ValueError('Extension marketplace page data doesn\'t contain a version.')
-    return match.group(1)  # The captured version specifier.
+    version = match.group(1)  # The captured version specifier.
+    logger.debug(f'Extension {extension_id} is of version {version}.')
+    return version
 
 
 def download_extensions_json(
@@ -73,23 +74,19 @@ def download_extensions_json(
         versioned = False
     extension_paths = parse_extensions_json(json_path)
     for ext_path in extension_paths:
+        logger.info(f'Working on {ext_path.extension_id}...')
         extension_save_dir = save_path / ext_path.path
         extension_save_dir.mkdir(parents=True, exist_ok=True)
-        logger.info(f'Working on {ext_path.extension_id}...')
-        final_path = download_extension_by_id(ext_path.extension_id, extension_save_dir)
+        extension_full_save_path = extension_save_dir / f'{ext_path.extension_id}._'
         if versioned:
-            logger.info(f'Requesting version of extension {ext_path.extension_id}...')
             extension_version = get_extension_version(ext_path.extension_id)
-            logger.info(
-                f'Extension {ext_path.extension_id} is of version {extension_version}.'
+            extension_full_save_path = extension_full_save_path.with_suffix(
+                f'.{extension_version}._'
             )
-            final_path_versioned = final_path.with_name(
-                f'{final_path.name}-{extension_version}.vsix'
-            )
-            final_path.rename(final_path_versioned)
-            final_path = final_path_versioned
+        extension_full_save_path = extension_full_save_path.with_suffix('.vsix')
+        download_extension_by_id(ext_path.extension_id, extension_full_save_path)
         logger.info(
-            f'Finished working on {ext_path.extension_id}: final path is {final_path}.'
+            f'Finished working on {ext_path.extension_id}: final path is {extension_full_save_path}.'
         )
 
 
