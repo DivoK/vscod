@@ -2,14 +2,13 @@ import asyncio
 import dataclasses
 import json
 import re
-import sys
 import typing
 from pathlib import Path
 
-import aiofiles
 import aiohttp
 from loguru import logger
 
+from .utils import _download_url, _get_request
 
 MARKETPLACE_DOWNLOAD_LINK = '''
     https://marketplace.visualstudio.com/_apis/public/gallery/publishers/{publisher_name}/vsextensions/{extension_name}/latest/vspackage
@@ -26,20 +25,6 @@ class ExtensionPath:
     extension_id: str
 
 
-def configure_verbosity(log_level: str = 'INFO'):
-    logger.configure(handlers=[dict(sink=sys.stderr, level=log_level)])
-
-
-async def _get_request(
-    session: aiohttp.ClientSession, url: str, *, return_type: typing.Type = bytes
-) -> typing.AnyStr:
-    async with session.get(url) as response:
-        logger.debug(f'Got answer from {url}')
-        if return_type is str:
-            return await response.text()
-        return await response.read()
-
-
 async def _download_extension(
     session: aiohttp.ClientSession, extension_name: str, publisher_name: str, save_path: Path
 ) -> None:
@@ -47,9 +32,7 @@ async def _download_extension(
     url = MARKETPLACE_DOWNLOAD_LINK.format(
         extension_name=extension_name, publisher_name=publisher_name
     )
-    data: bytes = await _get_request(session, url)
-    async with aiofiles.open(save_path, 'wb') as save_file:
-        await save_file.write(data)
+    await _download_url(session, url, save_path, return_type=bytes)
     logger.info(f'Downloaded {extension_name} to {save_path}.')
 
 
@@ -76,7 +59,7 @@ def _recursive_parse_to_dict(
                 ExtensionPath(Path(key) / f'{value}._' if append_name else '', value)
             )
         elif isinstance(value, dict):
-            for ext_path in _recursive_parse_to_dict(value):
+            for ext_path in _recursive_parse_to_dict(value, append_name=append_name):
                 ext_path.path = Path(key, ext_path.path)
                 path_list.append(ext_path)
         else:
@@ -85,13 +68,16 @@ def _recursive_parse_to_dict(
 
 
 def parse_extensions_json(
-    json_path: Path, *, append_name: typing.Optional[bool] = None
+    json_data: typing.Union[typing.Dict[str, str], Path],
+    *,
+    append_name: typing.Optional[bool] = None,
 ) -> typing.List[ExtensionPath]:
     if append_name is None:
         append_name = False
-    with json_path.open() as json_file:
-        extensions_dict = json.load(json_file)
-    return _recursive_parse_to_dict(extensions_dict, append_name=append_name)
+    if isinstance(json_data, Path):
+        with json_data.open() as json_file:
+            json_data = json.load(json_file)
+    return _recursive_parse_to_dict(json_data, append_name=append_name)
 
 
 async def get_extension_version(session: aiohttp.ClientSession, extension_id: str) -> str:
@@ -136,18 +122,3 @@ async def download_extensions_json(
                 )
             )
         await asyncio.gather(*download_extension_tasks)
-
-
-if __name__ == '__main__':
-    import time
-
-    start = time.time()
-    logger.info('START')
-    asyncio.run(
-        download_extensions_json(
-            Path('vscode_offline_downloader/extensions.json'),
-            Path('downloads'),
-            versioned=True,
-        )
-    )
-    logger.info(f'END: execution time = {time.time() - start}')
