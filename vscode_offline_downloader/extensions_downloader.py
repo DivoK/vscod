@@ -76,7 +76,7 @@ def parse_extensions_json(
         append_name = False
     if isinstance(json_data, Path):
         with json_data.open() as json_file:
-            json_data = json.load(json_file)
+            json_data = json.load(json_file)['extensions']
     return _recursive_parse_to_dict(json_data, append_name=append_name)
 
 

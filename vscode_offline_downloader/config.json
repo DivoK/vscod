@@ -1,0 +1,48 @@
+{
+    "vscode": [
+        {
+            "platform": "linux-deb-x64"
+        },
+        {
+            "platform": "win32-x64-user",
+            "version": "latest",
+            "build": "stable"
+        }
+    ],
+    "extensions": {
+        "git": {
+            "git_history": "donjayamanne.githistory",
+            "git_project_manager": "felipecaputo.git-project-manager",
+            "gitlens": "eamodio.gitlens"
+        },
+        "languages": {
+            "rust": {
+                "rust_rls": "rust-lang.rust"
+            },
+            "go": {
+                "go": "ms-vscode.go"
+            },
+            "python": {
+                "python": "ms-python.python",
+                "auto_docstring": "njpwerner.autodocstring"
+            }
+        },
+        "customizations": {
+            "icons": {
+                "material_icon": "pkief.material-icon-theme"
+            },
+            "themes": {
+                "blakai": "asilverio.blackai-visual-studio-code"
+            },
+            "keymaps": {
+                "vim": "vscodevim.vim"
+            }
+        },
+        "utility": {
+            "bracket_colorizer": "coenraads.bracket-pair-colorizer-2",
+            "code_runner": "formulahendry.code-runner",
+            "spell_checker": "streetsidesoftware.code-spell-checker",
+            "todo_tree": "gruntfuggly.todo-tree"
+        }
+    }
+}
