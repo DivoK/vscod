@@ -13,8 +13,8 @@ def configure_verbosity(log_level: str = 'INFO'):
 
 async def get_original_filename(session: aiohttp.ClientSession, url: str) -> str:
     async with session.get(url) as response:
-        name = Path(response.url).name
-        logger.debug(f'{url} name is {name}.')
+        name = response.headers.get('Content-Disposition', Path(str(response.url)).name)
+        logger.debug(f'{url} file name is {name}.')
         return name
 
 
