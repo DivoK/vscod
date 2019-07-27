@@ -4,12 +4,14 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+ipython = "*"
 
 [packages]
-requests = "*"
 loguru = "*"
 aiohttp = "*"
 aiofiles = "*"
+cchardet = "*"
+aiodns = "*"
 
 [requires]
 python_version = "3.7"
