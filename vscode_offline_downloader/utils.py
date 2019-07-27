@@ -11,6 +11,15 @@ def configure_verbosity(log_level: str = 'INFO'):
     logger.configure(handlers=[dict(sink=sys.stderr, level=log_level)])
 
 
+async def _get_original_filename(
+    session: aiohttp.ClientSession, url: str
+) -> str:
+    async with session.get(url) as response:
+        name = Path(response.url).name
+        logger.debug(f'{url} name is {name}.')
+        return name
+
+
 async def _get_request(
     session: aiohttp.ClientSession, url: str, *, return_type: typing.Type = bytes
 ) -> typing.AnyStr:
