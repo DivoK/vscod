@@ -8,7 +8,7 @@ from pathlib import Path
 import aiohttp
 from loguru import logger
 
-from .utils import _download_url, _get_request
+from .utils import download_url, get_request
 
 MARKETPLACE_DOWNLOAD_LINK = '''
     https://marketplace.visualstudio.com/_apis/public/gallery/publishers/{publisher_name}/vsextensions/{extension_name}/latest/vspackage
@@ -25,14 +25,18 @@ class ExtensionPath:
     extension_id: str
 
 
+def _build_extension_download_url(extension_name: str, publisher_name: str) -> str:
+    return MARKETPLACE_DOWNLOAD_LINK.format(
+        extension_name=extension_name, publisher_name=publisher_name
+    )
+
+
 async def _download_extension(
     session: aiohttp.ClientSession, extension_name: str, publisher_name: str, save_path: Path
 ) -> None:
     logger.info(f'Downloading {extension_name}...')
-    url = MARKETPLACE_DOWNLOAD_LINK.format(
-        extension_name=extension_name, publisher_name=publisher_name
-    )
-    await _download_url(session, url, save_path, return_type=bytes)
+    url = _build_extension_download_url(extension_name, publisher_name)
+    await download_url(session, url, save_path, return_type=bytes)
     logger.info(f'Downloaded {extension_name} to {save_path}.')
 
 
@@ -83,7 +87,7 @@ def parse_extensions_json(
 async def get_extension_version(session: aiohttp.ClientSession, extension_id: str) -> str:
     logger.debug(f'Requesting version of extension {extension_id}...')
     url = MARKETPLACE_PAGE_LINK.format(extension_id=extension_id)
-    text: str = await _get_request(session, url, return_type=str)
+    text: str = await get_request(session, url, return_type=str)
     match = re.search(r'"Version":"(.*?)"', text)
     if not match:
         raise ValueError('Extension marketplace page data doesn\'t contain a version.')
@@ -104,11 +108,14 @@ async def versionize_extension_paths(
 
 
 async def download_extensions_json(
-    json_path: Path, save_path: Path, *, versioned: typing.Optional[bool] = None
+    json_data: typing.Union[typing.Dict[str, str], Path],
+    save_path: Path,
+    *,
+    versioned: typing.Optional[bool] = None,
 ) -> None:
     if versioned is None:
         versioned = False
-    extension_paths = parse_extensions_json(json_path, append_name=True)
+    extension_paths = parse_extensions_json(json_data, append_name=True)
     async with aiohttp.ClientSession() as session:
         if versioned:
             await versionize_extension_paths(session, extension_paths)

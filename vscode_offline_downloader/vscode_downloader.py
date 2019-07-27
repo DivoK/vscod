@@ -7,7 +7,7 @@ from pathlib import Path
 import aiohttp
 from loguru import logger
 
-from .utils import _download_url, _get_original_filename
+from .utils import download_url
 
 DOWNLOAD_CODE_LINK = 'https://update.code.visualstudio.com/{version}/{platform}/{build}'
 LATEST_VERSION = 'latest'
@@ -42,11 +42,11 @@ PLATFORMS = _Platforms()
 BUILDS = _Builds()
 
 
-def _build_vscode_url(platform: str, build: str, version: str) -> str:
+def _build_vscode_download_url(platform: str, build: str, version: str) -> str:
     return DOWNLOAD_CODE_LINK.format(platform=platform, build=build, version=version)
 
 
-async def _download_vscode(
+async def download_vscode(
     session: aiohttp.ClientSession,
     platform: str,
     save_path: Path,
@@ -55,15 +55,15 @@ async def _download_vscode(
     version: str = LATEST_VERSION,
 ) -> None:
     logger.info(f'Downloading {platform} version...')
-    url = _build_vscode_url(platform, build, version)
-    await _download_url(session, url, save_path, return_type=bytes)
+    url = _build_vscode_download_url(platform, build, version)
+    await download_url(session, url, save_path, return_type=bytes)
     logger.info(f'Downloaded {version}/{platform}/{build} version to {save_path}.')
 
 
-async def download_vscode_spec(
+async def download_vscode_from_spec(
     session: aiohttp.ClientSession, spec: VSCodeSpec, save_path: Path
 ) -> None:
-    return await _download_vscode(
+    return await download_vscode(
         session=session,
         save_path=save_path,
         platform=spec.platform,
@@ -97,8 +97,10 @@ def parse_vscode_json(
     return _parse_vscode_specification_dict(json_data)
 
 
-async def download_vscode_json(json_path: Path, save_path: Path) -> None:
-    vscode_specs = parse_vscode_json(json_path)
+async def download_vscode_json(
+    json_data: typing.Union[typing.List[typing.Dict[str, str]], Path], save_path: Path
+) -> None:
+    vscode_specs = parse_vscode_json(json_data)
     async with aiohttp.ClientSession() as session:
         download_vscode_tasks = []
         for spec in vscode_specs:
@@ -106,6 +108,6 @@ async def download_vscode_json(json_path: Path, save_path: Path) -> None:
             vscode_full_save_path = save_path / f'{spec.platform}{spec.build}{spec.version}'
             vscode_full_save_path.parent.mkdir(parents=True, exist_ok=True)
             download_vscode_tasks.append(
-                download_vscode_spec(session, spec, vscode_full_save_path)
+                download_vscode_from_spec(session, spec, vscode_full_save_path)
             )
         await asyncio.gather(*download_vscode_tasks)
