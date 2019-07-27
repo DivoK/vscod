@@ -7,7 +7,7 @@ from pathlib import Path
 import aiohttp
 from loguru import logger
 
-from .utils import download_url
+from .utils import download_url, get_original_filename
 
 DOWNLOAD_CODE_LINK = 'https://update.code.visualstudio.com/{version}/{platform}/{build}'
 LATEST_VERSION = 'latest'
@@ -44,6 +44,12 @@ BUILDS = _Builds()
 
 def _build_vscode_download_url(platform: str, build: str, version: str) -> str:
     return DOWNLOAD_CODE_LINK.format(platform=platform, build=build, version=version)
+
+
+def _build_vscode_download_url_from_spec(spec: VSCodeSpec) -> str:
+    return _build_vscode_download_url(
+        platform=spec.platform, build=spec.build, version=spec.version
+    )
 
 
 async def download_vscode(
@@ -102,10 +108,14 @@ async def download_vscode_json(
 ) -> None:
     vscode_specs = parse_vscode_json(json_data)
     async with aiohttp.ClientSession() as session:
+        get_vscode_filename_tasks = [
+            get_original_filename(session, _build_vscode_download_url_from_spec(spec))
+            for spec in vscode_specs
+        ]
+        vscode_filenames = await asyncio.gather(*get_vscode_filename_tasks)
         download_vscode_tasks = []
-        for spec in vscode_specs:
-            # TODO: get the original filename from the response's redirected url.
-            vscode_full_save_path = save_path / f'{spec.platform}{spec.build}{spec.version}'
+        for spec, filename in zip(vscode_specs, vscode_filenames):
+            vscode_full_save_path = save_path / spec.platform / filename
             vscode_full_save_path.parent.mkdir(parents=True, exist_ok=True)
             download_vscode_tasks.append(
                 download_vscode_from_spec(session, spec, vscode_full_save_path)
