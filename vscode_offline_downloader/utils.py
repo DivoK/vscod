@@ -1,3 +1,4 @@
+import re
 import sys
 import typing
 from pathlib import Path
@@ -13,7 +14,11 @@ def configure_verbosity(log_level: str = 'INFO'):
 
 async def get_original_filename(session: aiohttp.ClientSession, url: str) -> str:
     async with session.get(url) as response:
-        name = response.headers.get('Content-Disposition', Path(str(response.url)).name)
+        content_disposition = response.headers.get('Content-Disposition')
+        if content_disposition:
+            name = re.findall('filename=(.+);', content_disposition)[0]
+        else:
+            name = Path(str(response.url)).name
         logger.debug(f'{url} file name is {name}.')
         return name
 
