@@ -1,12 +1,13 @@
 import asyncio
-import click
 import functools
 import typing
 from pathlib import Path
 
-from ..vscode_downloader import BUILDS, PLATFORMS, LATEST_VERSION, download_vscode_json
+import click
+
 from ..extensions_downloader import download_extensions_json
 from ..utils import configure_verbosity
+from ..vscode_downloader import BUILDS, LATEST_VERSION, PLATFORMS, download_vscode_json
 
 
 def coroutine(
@@ -47,9 +48,9 @@ def download():
     help='Where to output the downloaded files.',
 )
 @coroutine
-async def config(json_path: str, output_path: str):
-    download_vscode_json(Path(json_path), Path(output_path))
-    download_extensions_json(Path(json_path), Path(output_path))
+async def config(config_path: str, output_path: str):
+    await download_vscode_json(Path(config_path), Path(output_path))
+    await download_extensions_json(Path(config_path), Path(output_path))
 
 
 @download.command()
@@ -125,15 +126,15 @@ def _print_constants(obj) -> None:
 
 
 @cli.command()
-@click.option('-p', '--platforms', is_flag=True)
-@click.option('-b', '--builds', is_flag=True)
+@click.option('-p', '--platforms', is_flag=True, help='Show supported platforms strings.')
+@click.option('-b', '--builds', is_flag=True, help='Show supported builds strings.')
 def list_opts(platforms: bool, builds: bool):
     if not platforms and not builds:
         platforms = True
         builds = True
     if platforms:
-        click.echo('PLATFORM OPTIONS')
+        click.echo('=== PLATFORM OPTIONS ===')
         _print_constants(PLATFORMS)
     if builds:
-        click.echo('{}BUILDS OPTIONS'.format('\n' if platforms else ''))
+        click.echo('{}=== BUILDS OPTIONS ==='.format('\n' if platforms else ''))
         _print_constants(BUILDS)
