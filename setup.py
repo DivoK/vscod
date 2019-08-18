@@ -1,7 +1,7 @@
 import setuptools
 
 setuptools.setup(
-    name='vscodownloader',
+    name='vscod',
     version='0.1',
     packages=setuptools.find_packages(),
     include_package_data=True,
@@ -15,6 +15,6 @@ setuptools.setup(
     ],
     entry_points='''
         [console_scripts]
-        vscodownloader=vscode_offline_downloader.scripts.vscodownloader:cli
+        vscod=vscod.scripts.vscod:cli
     ''',
 )
