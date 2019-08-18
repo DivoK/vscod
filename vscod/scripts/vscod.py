@@ -26,10 +26,7 @@ def coroutine(
     '--quiet', is_flag=True, help='Make the downloader shut up. Overrides `verbose`.'
 )
 def cli(verbose: bool, quiet: bool):
-    if verbose:
-        configure_verbosity('DEBUG')
-    if quiet:
-        configure_verbosity('SHUT_UP', quiet=True)
+    configure_verbosity('DEBUG' if verbose else 'INFO', quiet=quiet)
 
 
 @cli.group()
