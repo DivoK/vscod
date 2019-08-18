@@ -8,8 +8,8 @@ import aiohttp
 from loguru import logger
 
 
-def configure_verbosity(log_level: str = 'INFO'):
-    logger.configure(handlers=[dict(sink=sys.stderr, level=log_level)])
+def configure_verbosity(log_level: str = 'INFO', *, quiet: bool = False):
+    logger.configure(handlers=[dict(sink=sys.stderr, level=log_level)] if not quiet else [])
 
 
 async def get_original_filename(session: aiohttp.ClientSession, url: str) -> str:

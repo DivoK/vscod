@@ -5,6 +5,7 @@ verify_ssl = true
 
 [dev-packages]
 ipython = "*"
+setuptools = "*"
 
 [packages]
 loguru = "*"
@@ -12,6 +13,7 @@ aiohttp = "*"
 aiofiles = "*"
 cchardet = "*"
 aiodns = "*"
+click = "*"
 
 [requires]
 python_version = "3.7"
