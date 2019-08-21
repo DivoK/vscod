@@ -50,7 +50,7 @@ class _Builds:
     """
 
     STABLE = 'stable'
-    INSIDERS = 'insiders'
+    INSIDER = 'insider'
 
 
 PLATFORMS = _Platforms()  # Platforms singleton.
